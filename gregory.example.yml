@@ -1,0 +1,16 @@
+max-threads: 10
+scripts-dir: "scripts"
+
+packages:
+  librewolf:
+    compilation:
+      - "cd ~/librewolf"
+      - "./mach blahblahblah"
+    packaging:
+      fedora:
+        - "git clone http://example.com/librewolf-fedora-packaging.git && cd librewolf-fedora-packaging/"
+        - "do-rpm-stuff-idk"
+
+update-repo:
+  fedora:
+    - "idkkkkk"
