@@ -1,16 +1,35 @@
+max-jobs: 4
 max-threads: 10
-scripts-dir: "scripts"
+log-level: 0
 
 packages:
   librewolf:
     compilation:
-      - "cd ~/librewolf"
-      - "./mach blahblahblah"
+      threads: 8
+      image: 'docker.io/library/debian'
+      commands:
+        - 'cd ~/librewolf'
+        - './mach build'
+      volumes:
+        - 'librewolf'
     packaging:
       fedora:
-        - "git clone http://example.com/librewolf-fedora-packaging.git && cd librewolf-fedora-packaging/"
-        - "do-rpm-stuff-idk"
+        threads: 8
+        image: 'docker.io/library/fedora'
+        commands:
+          - 'git clone http://example.com/librewolf-fedora-packaging.git && cd librewolf-fedora-packaging/'
+          - 'do-rpm-stuff-idk'
+        volumes:
+          - 'librewolf'
 
 update-repo:
   fedora:
-    - "idkkkkk"
+    threads: 4
+    image: 'docker.io/library/fedora'
+    commands:
+      - 'idkkkkk'
+    volumes:
+      - 'librewolf'
+
+volumes:
+  librewolf: './data/librewolf:/librewolf'
