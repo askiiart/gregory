@@ -12,26 +12,25 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::GenCompletion { shell } => match shell {
-            ShellCommands::Bash { binary_name } => {
+        Commands::GenCompletion { shell, binary_name } => match shell {
+            ShellCommands::Bash => {
                 generate(Bash, &mut Cli::command(), binary_name, &mut stdout());
             }
-            ShellCommands::Zsh { binary_name } => {
+            ShellCommands::Zsh => {
                 generate(Zsh, &mut Cli::command(), binary_name, &mut stdout());
             }
-            ShellCommands::Fish { binary_name } => {
+            ShellCommands::Fish => {
                 generate(Fish, &mut Cli::command(), binary_name, &mut stdout());
             }
-            ShellCommands::Elvish { binary_name } => {
+            ShellCommands::Elvish => {
                 generate(Elvish, &mut Cli::command(), binary_name, &mut stdout());
             }
-            ShellCommands::PowerShell { binary_name } => {
+            ShellCommands::Powershell => {
                 generate(PowerShell, &mut Cli::command(), binary_name, &mut stdout());
             }
         },
-        Commands::Run { config, daemonize } => {
+        Commands::Run { config} => {
             println!("{}", config);
-            println!("{}", daemonize)
         }
     }
 }

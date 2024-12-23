@@ -13,36 +13,26 @@ pub enum Commands {
     GenCompletion {
         #[command(subcommand)]
         shell: ShellCommands,
+        #[arg(short, long, default_value = "gregory")]
+        binary_name: String,
     },
     ///Runs it
     Run {
-        #[arg(short, long)]
+        ///Path to the config file
+        #[arg(short, long, default_value = "gregory.yml")]
         config: String,
+        /* Not yet supported
         #[arg(short, long)]
         daemonize: bool,
+        */
     },
 }
 
 #[derive(Subcommand, Debug)]
 pub enum ShellCommands {
-    Bash {
-        #[arg(short, long, default_value = "gregory")]
-        binary_name: String,
-    },
-    Zsh {
-        #[arg(short, long, default_value = "gregory")]
-        binary_name: String,
-    },
-    Fish {
-        #[arg(short, long, default_value = "gregory")]
-        binary_name: String,
-    },
-    Elvish {
-        #[arg(short, long, default_value = "gregory")]
-        binary_name: String,
-    },
-    PowerShell {
-        #[arg(short, long, default_value = "gregory")]
-        binary_name: String,
-    },
+    Bash,
+    Zsh,
+    Fish,
+    Elvish,
+    Powershell,
 }
