@@ -21,9 +21,9 @@ pub(crate) struct Config {
     #[serde(default = "max_threads", rename = "max-threads")]
     max_threads: u32,
     /// Holds the packages, including their compilation and packaging
-    /// 
+    ///
     /// Format: { "librewolf": Package { compilation, packaging } }
-    /// 
+    ///
     /// See [`Package`] for details
     packages: HashMap<String, Package>,
     #[serde(rename = "update-repo")]
@@ -36,7 +36,7 @@ pub(crate) struct Config {
 pub(crate) struct Job {
     #[serde(default = "job_threads")]
     /// How many threads to limit this job to; recommended to set it to the max threads the job will use
-    /// 
+    ///
     /// If `threads` isn't specified, it will fall back to `max_threads` (from [`Config`]); the same behavior applies if `threads` is greater than `max_threads`
     threads: u32,
     image: String,
