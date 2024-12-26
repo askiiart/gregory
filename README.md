@@ -2,6 +2,10 @@
 
 This is Gregory. Gregory controls repos. Gregory keeps track of updating repos, trying to be simple and elegant, but enough.
 
+## Documentation
+
+Go look at [`docs/`](/docs/)
+
 ## TODO
 
 - Add sources (similar to `sources` in a PKGBUILD)?
