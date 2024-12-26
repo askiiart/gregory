@@ -1,7 +1,7 @@
 use alphanumeric_sort::sort_str_slice;
 
 #[test]
-/// This isn't to test the program, more to test the crate works how I want, especially if I switch crates
+/// There sorting tests aren't to test the program, more to test the crate works how I want, especially if I switch crates
 fn test_semver_sorting() {
     // copied from https://pkgs.org/download/xorg-x11-xauth
     let mut versions = [

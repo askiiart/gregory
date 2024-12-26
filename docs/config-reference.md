@@ -8,9 +8,12 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 ## Top-level config
 
 - `log-level`: Log level `0`-`3` (error, warning, info, or debug)
+  - Default: 1 - warning
 - `max-threads`: The maximum number of threads to be used
   - **See also**: [`threads`](#job-config)
+  - Default is CPU's threads - 2
 - `max-jobs`: The maximum number of jobs to be run at once
+  - Default is 1
 
 **Multithreading notes (IMPORTANT)**: Gregory will first run compilation jobs, then packaging jobs for whatever programs are done, then run the `update-repo` for whichever distros are finished. For this reason, the distro names listed under `packaging` and `update-repo` *must* match.
 
@@ -21,8 +24,8 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
   - See `--cpus` in the [`podman run` docs](https://docs.podman.io/en/latest/markdown/podman-run.1.html#cpus)
   - *Root may be required for this argument*
   - If not specified, it will fall back to `max-threads`
-- `image`: The Docker image to run the job in
-- `commands`: The commands to run
+- `image`: The Docker image to run the job in *(required)*
+- `commands`: The commands to run *(required)*
   - TODO: Add command file/bash script instead
 - `volumes`: Names of volumes as defined in [`volumes` (top level)](#volumes)
 

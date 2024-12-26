@@ -1,11 +1,12 @@
 use crate::cli::*;
+use crate::data::*;
 use alphanumeric_sort::sort_str_slice;
 use clap::{CommandFactory, Parser};
 use clap_complete::aot::{generate, Bash, Elvish, Fish, PowerShell, Zsh};
-use std::fs;
 use std::io::stdout;
-use yaml_rust2::YamlLoader;
+
 mod cli;
+mod data;
 mod tests;
 
 fn main() {
@@ -29,14 +30,15 @@ fn main() {
                 generate(PowerShell, &mut Cli::command(), binary_name, &mut stdout());
             }
         },
-        Commands::Run { config} => {
-            println!("{}", config);
+        Commands::Run { config } => {
+            println!("Config path: {}", config);
+            run(config);
         }
     }
 }
 
 fn run(config_path: String) {
-    let tmp = fs::read_to_string(config_path.as_str()).unwrap();
-    let config = YamlLoader::load_from_str(tmp.as_str()).unwrap()[0].clone();
-    println!("{:?}", config)
+    let config = config_from_file(config_path);
+
+    println!("{:?}", config);
 }

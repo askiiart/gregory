@@ -8,6 +8,8 @@ This is Gregory. Gregory controls repos. Gregory keeps track of updating repos, 
 - Add support for loading scripts rather than listing commands
 - Add multithreading
 - Add better/custom grouping for when to run jobs (dependency system?)
+- Add dependency system (automatic detection?)
+- Add hook system
 
 ## Other stuff
 
