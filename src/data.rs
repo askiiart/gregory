@@ -22,31 +22,46 @@ pub(crate) struct Config {
     max_threads: u32,
     /// Holds the packages, including their compilation and packaging
     ///
-    /// Format: { "librewolf": Package { compilation, packaging } }
+    /// Format: `{ "librewolf": Package { compilation, packaging } }`
     ///
     /// See [`Package`] for details
     packages: HashMap<String, Package>,
+    /// The jobs for updating the repo, organized by distro/repo name
     #[serde(rename = "update-repo")]
     update_repo: HashMap<String, Job>,
+    /// All volumes, organized like this:
+    ///
+    /// Format: `{ "librewolf": "./data/librewolf:/librewolf" }` - like Docker/Podman formatting
     #[serde(default = "volumes")]
     volumes: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Job {
-    #[serde(default = "job_threads")]
     /// How many threads to limit this job to; recommended to set it to the max threads the job will use
     ///
     /// If `threads` isn't specified, it will fall back to `max_threads` (from [`Config`]); the same behavior applies if `threads` is greater than `max_threads`
+    #[serde(default = "job_threads")]
     threads: u32,
+    /// The OCi image to run it in
+    ///
+    /// For example, `docker.io/library/debian:latest`
     image: String,
+    ///
     commands: Vec<String>,
     volumes: Option<Vec<String>>,
+    /// Whether the job should be privileged
+    ///
+    /// Defauolt: false
+    #[serde(default = "privileged")]
+    privileged: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Package {
+    /// The compilation [`Job`] - optional
     compilation: Option<Job>,
+    /// The packaging [`Job`]s, organized by the distro/repo name
     packaging: HashMap<String, Job>,
 }
 
@@ -88,4 +103,9 @@ pub(crate) fn volumes() -> HashMap<String, String> {
 
 pub(crate) fn job_threads() -> u32 {
     return max_threads();
+}
+
+/// Default (false) for whether a job should be privileged
+pub(crate) fn privileged() -> bool {
+    return false;
 }

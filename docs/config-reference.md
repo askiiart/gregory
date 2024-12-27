@@ -1,33 +1,36 @@
 # Config Reference
 
-- Config location: `gregory.yml`
+- Default config location: `gregory.yml`
 - Example: see [`gregory.example.yml`](/gregory.example.yml)
 
 Note: This primarily uses LibreWolf and Fedora as examples of packages and distros. Also note that rather than separating by what distro, you can instead use those field to define which repo.
 
 ## Top-level config
 
-- `log-level`: Log level `0`-`3` (error, warning, info, or debug)
+- `log-level` (integer): Log level `0`-`3` (error, warning, info, or debug)
   - Default: 1 - warning
-- `max-threads`: The maximum number of threads to be used
+- `max-threads` (integer): The maximum number of threads to be used
   - **See also**: [`threads`](#job-config)
   - Default is CPU's threads - 2
-- `max-jobs`: The maximum number of jobs to be run at once
+- `max-jobs` (integer): The maximum number of jobs to be run at once
   - Default is 1
 
 **Multithreading notes (IMPORTANT)**: Gregory will first run compilation jobs, then packaging jobs for whatever programs are done, then run the `update-repo` for whichever distros are finished. For this reason, the distro names listed under `packaging` and `update-repo` *must* match.
 
+**Multithreading/multiple jobs is not implemented yet**
+
 ## Job config
 
-- `threads`: The maximum number of vCPUs/threads to dedicate to a job; this can be a fractional number
+- `threads` (integer): The maximum number of vCPUs/threads to dedicate to a job; this can be a fractional number
   - Set this as less than or equal to the max number of threads the thing you're running will use
   - See `--cpus` in the [`podman run` docs](https://docs.podman.io/en/latest/markdown/podman-run.1.html#cpus)
   - *Root may be required for this argument*
   - If not specified, it will fall back to `max-threads`
-- `image`: The Docker image to run the job in *(required)*
-- `commands`: The commands to run *(required)*
+- `image` (string): The Docker image to run the job in *(required)*
+- `commands` (sequence): The commands to run *(required)*
   - TODO: Add command file/bash script instead
-- `volumes`: Names of volumes as defined in [`volumes` (top level)](#volumes)
+- `volumes` (sequence): Names of volumes as defined in [`volumes` (top level)](#volumes)
+- `privileged` (bool): Whether the job's container should be privileged
 
 ## Packages (`packages`)
 
@@ -106,7 +109,7 @@ update-repo:
 
 ## Volumes
 
-Lists a volume in Docker's volume format, to be used in [job configs](#job-config)
+Lists a volume in Docker/Podman's volume format, to be used in [job configs](#job-config)
 
 ```yml
 volumes:

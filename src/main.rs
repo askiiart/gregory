@@ -40,5 +40,7 @@ fn main() {
 fn run(config_path: String) {
     let config = config_from_file(config_path);
 
-    println!("{:?}", config);
+    println!("{:#?}", config);
 }
+
+fn run_job() {}
