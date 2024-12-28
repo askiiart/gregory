@@ -1,4 +1,4 @@
-//! Datasets used by gregory and stuff for handling them
+//! Data structs. used by gregory and stuff for handling them
 
 use serde::Deserialize;
 use std::{collections::HashMap, fs, thread};
@@ -12,7 +12,7 @@ pub(crate) struct Config {
     /// - 1: Warning
     /// - 2: Info
     /// - 3: Debug
-    #[serde(default = "log_level", rename = "log-level")]
+    #[serde(default = "log_level", rename = "log-level")] // the rename lets it use `log-level` instead in the yaml file - this is not an alias, `log_level` in the yaml will *not* work
     log_level: u8,
     /// Maximum number of jobs to run simultaneously
     #[serde(default = "max_jobs", rename = "max-jobs")]
@@ -47,7 +47,7 @@ pub(crate) struct Job {
     ///
     /// For example, `docker.io/library/debian:latest`
     image: String,
-    ///
+    /// The commands to run in the job
     commands: Vec<String>,
     volumes: Option<Vec<String>>,
     /// Whether the job should be privileged
@@ -76,10 +76,12 @@ pub(crate) fn config_from_file(filename: String) -> Config {
 // ===                    ===
 // ==========================
 
+/// Returns the default log level (1 - warning)
 pub(crate) fn log_level() -> u8 {
     return 1;
 }
 
+/// Returns the default number of max threads
 pub(crate) fn max_threads() -> u32 {
     let total_threads = thread::available_parallelism().unwrap().get() as u32;
     if total_threads >= 32 {
@@ -93,14 +95,17 @@ pub(crate) fn max_threads() -> u32 {
     }
 }
 
+/// Returns the default number of max jobs - 1
 pub(crate) fn max_jobs() -> u32 {
     return 1;
 }
 
+/// Returns the default volumes, i.e. none
 pub(crate) fn volumes() -> HashMap<String, String> {
     return HashMap::new();
 }
 
+/// Returns the default number of threads for a job - [`max_threads()`]
 pub(crate) fn job_threads() -> u32 {
     return max_threads();
 }

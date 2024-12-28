@@ -1,4 +1,12 @@
 use alphanumeric_sort::sort_str_slice;
+use crate::data::*;
+
+#[test]
+fn test_config() {
+    // It's a pain to make the config manually so I'm just doing this lol
+    let conf = "Config { log_level: 0, max_jobs: 4, max_threads: 10, packages: {\"librewolf\": Package { compilation: Some(Job { threads: 8, image: \"docker.io/library/debian\", commands: [\"cd ~/librewolf\", \"./mach build\"], volumes: Some([\"librewolf\"]), privileged: false }), packaging: {\"fedora\": Job { threads: 8, image: \"docker.io/library/fedora\", commands: [\"git clone http://example.com/librewolf-fedora-packaging.git && cd librewolf-fedora-packaging/\", \"do-rpm-stuff-idk\"], volumes: Some([\"librewolf\"]), privileged: false }} }}, update_repo: {\"fedora\": Job { threads: 4, image: \"docker.io/library/fedora\", commands: [\"idkkkkk\"], volumes: Some([\"librewolf\"]), privileged: false }}, volumes: {\"librewolf\": \"./data/librewolf:/librewolf\"} }";
+    assert_eq!(format!("{:?}", config_from_file("gregory.example.yml".to_string())), conf);
+}
 
 #[test]
 /// There sorting tests aren't to test the program, more to test the crate works how I want, especially if I switch crates
