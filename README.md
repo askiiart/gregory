@@ -14,6 +14,7 @@ Go look at [`docs/`](/docs/)
 - Add better/custom grouping for when to run jobs (dependency system?)
 - Add dependency system (automatic detection?)
 - Add hook system
+- Add SQL database (maybe using `sqlx`?)
 
 ## Other stuff
 
