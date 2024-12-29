@@ -5,11 +5,13 @@ log-level: 0
 packages:
   librewolf:
     compilation:
+      id: 1
+      revision: 2
       threads: 8
       image: 'docker.io/library/debian'
       commands:
-        - 'cd ~/librewolf'
-        - './mach build'
+        - 'echo hi'
+        - 'echo helloooooooooo'
       volumes:
         - 'librewolf'
     packaging:
@@ -17,8 +19,8 @@ packages:
         threads: 8
         image: 'docker.io/library/fedora'
         commands:
-          - 'git clone http://example.com/librewolf-fedora-packaging.git && cd librewolf-fedora-packaging/'
-          - 'do-rpm-stuff-idk'
+          - 'echo did you ever hear the tragedy of darth plageuis the wise?'
+          - "echo it's not a story the jedi would tell you"
         volumes:
           - 'librewolf'
 
@@ -27,7 +29,7 @@ update-repo:
     threads: 4
     image: 'docker.io/library/fedora'
     commands:
-      - 'idkkkkk'
+      - 'echo hai'
     volumes:
       - 'librewolf'
 
