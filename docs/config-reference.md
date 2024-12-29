@@ -14,6 +14,8 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
   - Default is CPU's threads - 2
 - `max-jobs` (integer): The maximum number of jobs to be run at once
   - Default is 1
+- `data-dir` (string): The path to put data for job logs and stuff
+  - **Temporary**, will be removed once SQL database support is added
 
 **Multithreading notes (IMPORTANT)**: Gregory will first run compilation jobs, then packaging jobs for whatever programs are done, then run the `update-repo` for whichever distros are finished. For this reason, the distro names listed under `packaging` and `update-repo` *must* match.
 
@@ -21,16 +23,23 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 
 ## Job config
 
+- `id` (string): An ID to identify the job, such as the compilation of a program **(highly recommended)**
+  - Default is `-1` for unassigned
+  - If you just want to run stuff, you don't need this, but it's *highly* recommended as it allows you to filter your logs.
+- `revision` (string): A revision id for the job, such as a version number for a compilation script
+  - Default is `1`
 - `threads` (integer): The maximum number of vCPUs/threads to dedicate to a job; this can be a fractional number
   - Set this as less than or equal to the max number of threads the thing you're running will use
   - See `--cpus` in the [`podman run` docs](https://docs.podman.io/en/latest/markdown/podman-run.1.html#cpus)
   - *Root may be required for this argument*
   - If not specified, it will fall back to `max-threads`
-- `image` (string): The Docker image to run the job in *(required)*
-- `commands` (sequence): The commands to run *(required)*
+- `image` (string): The Docker image to run the job in **(required)**
+- `commands` (sequence): The commands to run **(required)**
   - TODO: Add command file/bash script instead
 - `volumes` (sequence): Names of volumes as defined in [`volumes` (top level)](#volumes)
 - `privileged` (bool): Whether the job's container should be privileged
+- `shell` (string): The shell to run the commands in
+  - Default: `/bin/sh`
 
 ## Packages (`packages`)
 

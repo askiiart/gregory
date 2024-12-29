@@ -2,6 +2,8 @@
 
 This is Gregory. Gregory controls repos. Gregory keeps track of updating repos, trying to be simple and elegant, but enough.
 
+## THIS IS A PROTOTYPE
+
 ## Documentation
 
 Go look at [`docs/`](/docs/)
