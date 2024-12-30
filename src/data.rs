@@ -14,7 +14,7 @@ pub(crate) struct Config {
     /// - 2: Info
     /// - 3: Debug
     #[serde(default = "log_level", rename = "log-level")]
-    // the rename lets it use `log-level` instead in the yaml file - this is not an alias, `log_level` in the yaml will *not* work
+    // the rename lets it use `log-level` instead in the toml file - this is not an alias, `log_level` in the toml will *not* work
     pub(crate) log_level: u8,
     /// Maximum number of jobs to run simultaneously
     #[serde(default = "max_jobs", rename = "max-jobs")]
@@ -98,8 +98,8 @@ pub(crate) struct JobExitStatus {
 }
 
 pub(crate) fn config_from_file(filename: String) -> Config {
-    let yaml: Config = serde_yml::from_str(fs::read_to_string(filename).unwrap().as_str()).unwrap();
-    return yaml;
+    let toml: Config = toml::from_str(fs::read_to_string(filename).unwrap().as_str()).unwrap();
+    return toml;
 }
 
 // ==========================

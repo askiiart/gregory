@@ -10,7 +10,7 @@ Usage: gregory run [OPTIONS]
 
 **Options:**
 
-- `-c`, `--config`: Path to the config file; default: `gregory.yml`
+- `-c`, `--config`: Path to the config file; default: `gregory.toml`
 <!-- - `-d`, `--daemonize`: Whether to daemonize the program - not yet supported -->
 
 ## Generate shell completions `gen-completion`

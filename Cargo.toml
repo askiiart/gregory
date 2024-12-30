@@ -3,13 +3,15 @@ name = "gregory"
 version = "0.1.1"
 edition = "2021"
 license = "GPL-3.0-only"
+repository = "https://git.askiiart.net/askiiart/gregory"
+readme = "README.md"
 
 [dependencies]
 alphanumeric-sort = "1.5.3"
 clap = { version = "4.5.23", features = ["derive"] }
 clap_complete = "4.5.40"
 serde = { version = "1.0.216", features = ["derive"] }
-serde_yml = "0.0.12"
+toml = "0.8.19"
 uuid = { version = "1.11.0", features = ["v7", "fast-rng"] }
 
 [profile.release]

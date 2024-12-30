@@ -22,7 +22,7 @@
             "args": [
                 "run",
                 "-c",
-                "gregory.example.yml"
+                "gregory.example.toml"
             ],
             "cwd": "${workspaceFolder}"
         },

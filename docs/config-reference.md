@@ -1,7 +1,14 @@
 # Config Reference
 
-- Default config location: `gregory.yml`
-- Example: see [`gregory.example.yml`](/gregory.example.yml)
+- Default config location: `gregory.toml`
+- **Example**: see [`gregory.example.toml`](/gregory.example.toml)
+
+It's recommended to edit the config file using [Even Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml) for VS Code with the following options:
+
+```json
+    "evenBetterToml.formatter.indentTables": true,
+    "evenBetterToml.formatter.indentString": "  "
+```
 
 Note: This primarily uses LibreWolf and Fedora as examples of packages and distros. Also note that rather than separating by what distro, you can instead use those field to define which repo.
 
@@ -34,9 +41,9 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
   - *Root may be required for this argument*
   - If not specified, it will fall back to `max-threads`
 - `image` (string): The Docker image to run the job in **(required)**
-- `commands` (sequence): The commands to run **(required)**
-  - TODO: Add command file/bash script instead
-- `volumes` (sequence): Names of volumes as defined in [`volumes` (top level)](#volumes)
+- `commands` (array): The commands to run **(required)**
+  - Note than you can use single-quote strings instead for string literals - see [TOML docs](https://github.com/toml-lang/toml/blob/main/toml.md#string) for details
+- `volumes` (array): Names of volumes as defined in [`volumes` (top level)](#volumes)
 - `privileged` (bool): Whether the job's container should be privileged
 - `shell` (string): The shell to run the commands in
   - Default: `/bin/sh`
@@ -45,19 +52,27 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 
 Example:
 
-```yml
-packages:
-  librewolf:
-    compilation:
-      image: 'debian'
-      commands:
-        - './mach build'
-    
-    packaging:
-      fedora:
-        image: 'lesbi-oops-i-mean/debian'
-        commands:
-          - './lesbiab package thingy'
+```toml
+[packages]
+
+  [packages.librewolf]
+
+    [packages.librewolf.compilation]
+    id = "1"
+    revision = "2"
+    threads = 8
+    image = "docker.io/library/debian"
+    commands = ["echo hi", "echo helloooooooooo"]
+    volumes = ["librewolf"]
+
+    [packages.librewolf.packaging.fedora]
+    threads = 8
+    image = "docker.io/library/fedora"
+    commands = [
+      "echo did you ever hear the tragedy of darth plageuis the wise?",
+      "echo it\\'s not a story the jedi would tell you",
+    ]
+    volumes = ["librewolf"]
 ```
 
 ### Compilation (optional)
@@ -66,17 +81,18 @@ Defines the compilation of a program, if applicable. Stuff like Python scripts c
 
 It's defined in this format:
 
-```yml
-packages:
-  pkgname:
-    compilation:
-      image: 'fedora'
-      commands:
-        - 'echo hi'
+```toml
+[packages]
 
-  other-package:
-    compilation:
-      job-details-go-here:
+  [packages.librewolf]
+
+    [packages.librewolf.compilation]
+    id = "1"
+    revision = "2"
+    threads = 8
+    image = "docker.io/library/debian"
+    commands = ["echo hi", "echo helloooooooooo"]
+    volumes = ["librewolf"]
 ```
 
 ### Packaging
@@ -85,19 +101,22 @@ Defines the packaging of a program into stuff like `.deb` or `.rpm` files.
 
 Example:
 
-```yml
-packages:
-  pkgname:
-    packaging:
-      distro-name:
-        image: 'fedora'
-        commands:
-          - 'echo hi'
-  
-  other-package:
-    packaging:
-      distro-name:
-        job-details-go-here:
+```toml
+[packages.librewolf.packaging.fedora]
+threads = 8
+image = "docker.io/library/fedora"
+commands = [
+  "echo did you ever hear the tragedy of darth plageuis the wise?",
+  "echo it\\'s not a story the jedi would tell you",
+]
+volumes = ["librewolf"]
+
+[packages.librewolf.packaging.debian]
+threads = 4
+image = "docker.io/library/debian"
+commands = [
+  "echo hiiiiiii"
+]
 ```
 
 Replace `distro-name` with the name of a distro, like `fedora` or `debian`
@@ -108,19 +127,21 @@ Defines how to update a repo.
 
 Example:
 
-```yml
-update-repo:
-  distro-name:
-    image: 'fedora'
-    command:
-      - 'echo hi'
+```toml
+[update-repo]
+
+  [update-repo.fedora]
+  threads = 4
+  image = 'docker.io/library/fedora'
+  commands = ["echo hai"]
+  volumes = ["librewolf"]
 ```
 
 ## Volumes
 
 Lists a volume in Docker/Podman's volume format, to be used in [job configs](#job-config)
 
-```yml
-volumes:
-  librewolf: './local/path:/path/in/container'
+```toml
+[volumes]
+librewolf = "./local/path:/path-in-container"
 ```

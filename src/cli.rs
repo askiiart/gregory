@@ -19,7 +19,7 @@ pub enum Commands {
     ///Runs it
     Run {
         ///Path to the config file
-        #[arg(short, long, default_value = "gregory.yml")]
+        #[arg(short, long, default_value = "gregory.toml")]
         config: String,
         /* Not yet supported
         #[arg(short, long)]

@@ -5,6 +5,7 @@ use clap::{CommandFactory, Parser};
 use clap_complete::aot::{generate, Bash, Elvish, Fish, PowerShell, Zsh};
 use std::fs;
 use std::fs::create_dir_all;
+use std::fs::remove_dir_all;
 use std::fs::write;
 use std::fs::File;
 use std::io::stdout;
@@ -84,13 +85,30 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
 
     let container_name: String = format!("gregory-{}-{}-{}", job.id, job.revision, Uuid::now_v7());
 
-    let log_path = &format!("{}/logs/{container_name}.txt", conf.data_dir); // can't select fields in the format!() {} thing, have to do this
-    let log_dir: &Path = Path::new(log_path);
-    create_dir_all(log_dir.parent().unwrap()).unwrap();
-    write(log_path, job.commands.join("\n")).unwrap();
+    // create log path
+    let log_path = &format!("{}/logs/{container_name}", conf.data_dir); // can't select fields in the format!() {} thing, have to do this
+    let log_dir: &Path = Path::new(log_path).parent().unwrap();
+    create_dir_all(log_dir).unwrap();
+
+    // write the script
+    let script_path = &format!("{}/tmp/{container_name}.sh", conf.data_dir); // can't select fields in the format!() {} thing, have to do this
+                                                                             // create dir for the script
+    let script_dir: &Path = Path::new(script_path).parent().unwrap();
+    create_dir_all(script_dir).unwrap();
+    write(
+        script_path,
+        job.commands
+            //.iter()
+            //.map(|item| {
+            //    // TODO: FIGURE OUT HOW TO HANDLE IT ESCAPING IT OR WHATEVER AAAAAAAAAAAAA
+            //})
+            //.collect::<Vec<String>>()
+            .join("\n"),
+    )
+    .unwrap();
 
     // set permissions - *unix specific*
-    let mut perms = File::open(log_path)
+    let mut perms = File::open(script_path)
         .unwrap()
         .metadata()
         .unwrap()
@@ -103,13 +121,22 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
         format!("--name={container_name}"),
         format!("--cpus={threads}"),
         format!("--privileged={}", job.privileged),
-        format!("-v={log_path}:/gregory-entrypoint.sh"),
-        format!("--entrypoint=['{}', '/gregory-entrypoint.sh']", &job.shell),
-        job.clone().image
+        format!("-v={script_path}:/gregory-entrypoint.sh"),
+        format!(
+            "--entrypoint=[\"{}\", \"/gregory-entrypoint.sh\"]",
+            &job.shell
+        ),
+        job.clone().image,
     ];
+    println!("{:?}", cmd_args);
     let cmd_output = Command::new("podman").args(cmd_args).output().unwrap();
     let elapsed = now.elapsed();
+    // remove tmp dir
+    remove_dir_all(script_dir).unwrap();
 
+    // write logs - TEMPORARY
+    write(log_path, &cmd_output.stdout).unwrap();
+    write(format!("{log_path}.err"), &cmd_output.stderr).unwrap();
 
     println!("{:?}", cmd_output);
 
