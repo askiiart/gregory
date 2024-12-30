@@ -10,13 +10,11 @@ Go look at [`docs/`](/docs/)
 
 ## TODO
 
-- Add sources (similar to `sources` in a PKGBUILD)?
-- Add support for loading scripts rather than listing commands
 - Add multithreading
 - Add better/custom grouping for when to run jobs (dependency system? (automatic detection?))
 - Add hook system
 - Add SQL database (maybe using `sqlx`?)
-  - Log stderr too ()
+  - Log stderr too
 
 ## Other stuff
 
