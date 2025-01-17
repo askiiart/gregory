@@ -1,5 +1,6 @@
 //! Data structs. used by gregory and stuff for handling them
 
+use crate::errors::Error;
 use serde::Deserialize;
 use std::time;
 use std::{collections::HashMap, fs, thread};
@@ -83,7 +84,7 @@ pub(crate) struct Package {
 pub(crate) struct JobExitStatus {
     pub(crate) job: Job,
     /// The [`Job`] this status is from
-    /// 
+    ///
     /// This is stored as a u16 rather than a u8 so that 65535 can be returned if there is no exit code rather than doing an Option or something, which I fear will probably come back to haunt me, but whatever
     pub(crate) exit_code: u16,
     /// Where the log is
@@ -97,9 +98,18 @@ pub(crate) struct JobExitStatus {
     pub(crate) container_name: String,
 }
 
-pub(crate) fn config_from_file(filename: String) -> Config {
-    let toml: Config = toml::from_str(fs::read_to_string(filename).unwrap().as_str()).unwrap();
-    return toml;
+pub(crate) fn config_from_file(filename: String) -> Result<Config, Error> {
+    match fs::read_to_string(filename) {
+        Ok(raw_data) => match toml::from_str(raw_data.as_str()) {
+            Ok(conf) => return Ok(conf),
+            Err(e) => {
+                return Err(Error::DeserError(e));
+            }
+        },
+        Err(e) => {
+            return Err(Error::IOError(e));
+        }
+    }
 }
 
 // ==========================

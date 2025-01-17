@@ -18,6 +18,7 @@ use uuid::Uuid;
 mod cli;
 mod data;
 mod tests;
+mod errors;
 
 fn main() {
     let cli = Cli::parse();
@@ -48,7 +49,7 @@ fn main() {
 }
 
 fn run(config_path: String) {
-    let config = config_from_file(config_path);
+    let config = config_from_file(config_path).unwrap();
 
     println!("{:#?}", config);
 
