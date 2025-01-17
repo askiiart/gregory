@@ -8,15 +8,6 @@ use std::{collections::HashMap, fs, thread};
 /// The config for gregory
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Config {
-    /// What level to log at
-    ///
-    /// - 0: Error
-    /// - 1: Warning
-    /// - 2: Info
-    /// - 3: Debug
-    #[serde(default = "log_level", rename = "log-level")]
-    // the rename lets it use `log-level` instead in the toml file - this is not an alias, `log_level` in the toml will *not* work
-    pub(crate) log_level: u8,
     /// Maximum number of jobs to run simultaneously
     #[serde(default = "max_jobs", rename = "max-jobs")]
     pub(crate) max_jobs: u32,
@@ -27,7 +18,7 @@ pub(crate) struct Config {
     pub(crate) data_dir: String,
     /// Holds the packages, including their compilation and packaging
     ///
-    /// Format: `{ "librewolf": Package { compilation, packaging } }`
+    /// See config reference in the docs for details.
     ///
     /// See [`Package`] for details
     pub(crate) packages: HashMap<String, Package>,
@@ -36,11 +27,12 @@ pub(crate) struct Config {
     pub(crate) update_repo: HashMap<String, Job>,
     /// All volumes, organized like this:
     ///
-    /// Format: `{ "librewolf": "./data/librewolf:/librewolf" }` - like Docker/Podman formatting
+    /// Format: `librewolf = "./data/librewolf:/librewolf"` - like Docker/Podman formatting
     #[serde(default = "volumes")]
     pub(crate) volumes: HashMap<String, String>,
 }
 
+/// Holds the data for a job
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Job {
     /// An ID to identify the job, such as the compilation of a program
@@ -73,6 +65,9 @@ pub(crate) struct Job {
 /// Holds the data for a certain package's config
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Package {
+    /// What other packages gregory handles which this depends on
+    #[serde(default = "dependencies")]
+    pub(crate) dependencies: Vec<String>,
     /// The compilation [`Job`] - optional
     pub(crate) compilation: Option<Job>,
     /// The packaging [`Job`]s, organized by the distro/repo name
@@ -117,11 +112,6 @@ pub(crate) fn config_from_file(filename: String) -> Result<Config, Error> {
 // ===    ↓ DEFAULTS ↓    ===
 // ===                    ===
 // ==========================
-
-/// Returns the default log level (1 - warning)
-pub(crate) fn log_level() -> u8 {
-    return 1;
-}
 
 /// Returns the default number of max threads.
 pub(crate) fn max_threads() -> f32 {
@@ -174,4 +164,8 @@ pub(crate) fn revision() -> String {
 
 pub(crate) fn data() -> String {
     return "./data".to_string();
+}
+
+pub(crate) fn dependencies() -> Vec<String> {
+    return Vec::new();
 }

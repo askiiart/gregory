@@ -14,8 +14,6 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 
 ## Top-level config
 
-- `log-level` (integer): Log level `0`-`3` (error, warning, info, or debug)
-  - Default: 1 - warning
 - `max-threads` (float): The maximum number of threads to be used
   - **See also**: [`threads`](#job-config)
   - Default is CPU's threads - 2
@@ -48,8 +46,6 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 - `shell` (string): The shell to run the commands in
   - Default: `/bin/sh`
 
-Note: `id` and `revision` are *not* for the package version, they are for 
-
 ## Packages (`packages`)
 
 Example:
@@ -58,6 +54,8 @@ Example:
 [packages]
 
   [packages.librewolf]
+
+    dependencies = ["some-librewolf-dependency"]
 
     [packages.librewolf.compilation]
     id = "1"
@@ -76,6 +74,8 @@ Example:
     ]
     volumes = ["librewolf"]
 ```
+
+Aside from just the jobs, `packages` also contains the `dependencies` field, which lists dependencies for this package which gregory manages - don't list external dependencies in that field.
 
 ### Compilation (optional)
 

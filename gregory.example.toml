@@ -1,27 +1,46 @@
 max-jobs = 4
 max-threads = 10
-log-level = 0
 
 [packages]
 
   [packages.librewolf]
 
+    dependencies = ["some-librewolf-dependency"]
+
     [packages.librewolf.compilation]
     id = "1"
     revision = "2"
-    threads = 8
+    threads = 6
     image = "docker.io/library/debian"
     commands = ["echo hi", "echo helloooooooooo"]
     volumes = ["librewolf"]
 
     [packages.librewolf.packaging.fedora]
-    threads = 8
+    threads = 2
     image = "docker.io/library/fedora"
     commands = [
       "echo did you ever hear the tragedy of darth plageuis the wise?",
       "echo it\\'s not a story the jedi would tell you",
     ]
-    volumes = ["librewolf"]
+    volumes = ["librewolf", "fedora-repo"]
+
+  [packages.some-librewolf-dependency]
+
+    [packages.some-librewolf-dependency.compilation]
+    id = "1"
+    revision = "2"
+    threads = 2
+    image = "docker.io/library/debian"
+    commands = ["echo hi", "echo helloooooooooo"]
+    volumes = ["other-workspace"]
+
+    [packages.some-librewolf-dependency.packaging.fedora]
+    id = "1"
+    revision = "2"
+    threads = 2
+    image = "docker.io/library/fedora"
+    commands = ["echo hello worldddddddd"]
+    volumes = ["other-workspace", "fedora-repo"]
 
 [update-repo]
 
@@ -33,3 +52,5 @@ log-level = 0
 
 [volumes]
 librewolf = "./data/librewolf:/librewolf"
+other-workspace = "./data/other-workspace:/workspace"
+fedora-repo = "./data/fedora-repo:/fedora-repo"
