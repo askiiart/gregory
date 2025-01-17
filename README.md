@@ -11,10 +11,11 @@ Go look at [`docs/`](/docs/)
 ## TODO
 
 - Add multithreading
-- Add better/custom grouping for when to run jobs (dependency system? (automatic detection?))
 - Add hook system
 - Add SQL database (maybe using `sqlx`?)
   - Log stderr too
+- Add dependency system
+  - Automatic detection with features (extensibility?) for each distro?
 
 ## Other stuff
 
