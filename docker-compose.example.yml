@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: 'docker.io/library/postgres:17-alpine'
+    environment:
+      - POSTGRES_PASSWORD=ReplaceMeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+      # if there's already a he/him gregory down the hall, then change it to `gregory_it_its`, to make sure you know it's gregory, the program, not gregory the he/him down the hall
+      # ig if there's an it/its gregory already then they just have to change their name to Its Majesty Queen Henry the Eighth
+      # oops sorry it/its gregory down the hall, correction: it just has to changes its name
+      - POSTGRES_USER=gregory
+      - POSTGRES_DB=gregory
+    volumes:
+      - './data:/var/lib/postgresql/data'
+    ports:
+      - 9001:5432
