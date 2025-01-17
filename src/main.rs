@@ -79,7 +79,7 @@ fn run(config_path: String) {
 
 fn run_job(conf: Config, job: Job) -> JobExitStatus {
     // limit threads to max_threads in the config
-    let mut threads: u32 = job.threads;
+    let mut threads = job.threads;
     if job.threads > conf.max_threads {
         threads = conf.max_threads;
     }

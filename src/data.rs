@@ -22,7 +22,7 @@ pub(crate) struct Config {
     pub(crate) max_jobs: u32,
     /// Maximum number of threads to use
     #[serde(default = "max_threads", rename = "max-threads")]
-    pub(crate) max_threads: u32,
+    pub(crate) max_threads: f32,
     #[serde(default = "data", rename = "data-dir")]
     pub(crate) data_dir: String,
     /// Holds the packages, including their compilation and packaging
@@ -52,7 +52,7 @@ pub(crate) struct Job {
     ///
     /// If `threads` isn't specified, it will fall back to `max_threads` (from [`Config`]); the same behavior applies if `threads` is greater than `max_threads`
     #[serde(default = "job_threads")]
-    pub(crate) threads: u32,
+    pub(crate) threads: f32,
     /// The OCI image to run it in
     ///
     /// For example, `docker.io/library/debian:latest`
@@ -123,15 +123,15 @@ pub(crate) fn log_level() -> u8 {
     return 1;
 }
 
-/// Returns the default number of max threads
-pub(crate) fn max_threads() -> u32 {
-    let total_threads = thread::available_parallelism().unwrap().get() as u32;
-    if total_threads >= 32 {
-        return total_threads - 4;
-    } else if total_threads >= 12 {
-        return total_threads - 2;
-    } else if total_threads >= 3 {
-        return total_threads - 1;
+/// Returns the default number of max threads.
+pub(crate) fn max_threads() -> f32 {
+    let total_threads = thread::available_parallelism().unwrap().get() as f32;
+    if total_threads >= 32.0 {
+        return total_threads - 4.0;
+    } else if total_threads >= 12.0 {
+        return total_threads - 2.0;
+    } else if total_threads >= 3.0 {
+        return total_threads - 1.0;
     } else {
         return total_threads;
     }
@@ -148,7 +148,7 @@ pub(crate) fn volumes() -> HashMap<String, String> {
 }
 
 /// Returns the default number of threads for a job - [`max_threads()`]
-pub(crate) fn job_threads() -> u32 {
+pub(crate) fn job_threads() -> f32 {
     return max_threads();
 }
 

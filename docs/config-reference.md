@@ -16,7 +16,7 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 
 - `log-level` (integer): Log level `0`-`3` (error, warning, info, or debug)
   - Default: 1 - warning
-- `max-threads` (integer): The maximum number of threads to be used
+- `max-threads` (float): The maximum number of threads to be used
   - **See also**: [`threads`](#job-config)
   - Default is CPU's threads - 2
 - `max-jobs` (integer): The maximum number of jobs to be run at once
@@ -26,7 +26,7 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 
 **Multithreading notes (IMPORTANT)**: Gregory will first run compilation jobs, then packaging jobs for whatever programs are done, then run the `update-repo` for whichever distros are finished. For this reason, the distro names listed under `packaging` and `update-repo` *must* match.
 
-**Multithreading/multiple jobs is not implemented yet**
+**Multithreading is not implemented yet**
 
 ## Job config
 
@@ -35,7 +35,7 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
   - If you just want to run stuff, you don't need this, but it's *highly* recommended as it allows you to filter your logs.
 - `revision` (string): A revision id for the job, such as a version number for a compilation script
   - Default is `1`
-- `threads` (integer): The maximum number of vCPUs/threads to dedicate to a job; this can be a fractional number
+- `threads` (float): The maximum number of vCPUs/threads to dedicate to a job; this can be a fractional number
   - Set this as less than or equal to the max number of threads the thing you're running will use
   - See `--cpus` in the [`podman run` docs](https://docs.podman.io/en/latest/markdown/podman-run.1.html#cpus)
   - *Root may be required for this argument*
@@ -47,6 +47,8 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 - `privileged` (bool): Whether the job's container should be privileged
 - `shell` (string): The shell to run the commands in
   - Default: `/bin/sh`
+
+Note: `id` and `revision` are *not* for the package version, they are for 
 
 ## Packages (`packages`)
 
