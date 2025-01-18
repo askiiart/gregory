@@ -1,6 +1,7 @@
 use crate::cli::*;
 use crate::data::*;
 use alphanumeric_sort::sort_str_slice;
+use better_commands;
 use clap::{CommandFactory, Parser};
 use clap_complete::aot::{generate, Bash, Elvish, Fish, PowerShell, Zsh};
 use std::fs;
@@ -12,15 +13,16 @@ use std::io::stdout;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Instant;
 use uuid::Uuid;
-use better_commands;
 
 mod cli;
 mod data;
 mod errors;
-mod tests;
 mod logging;
+mod tests;
 
 fn main() {
     let cli = Cli::parse();
@@ -86,28 +88,21 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
 
     let container_name: String = format!("gregory-{}-{}-{}", job.id, job.revision, Uuid::now_v7());
 
-    // create log path
+    // do job log setup
     let log_path = &format!("{}/logs/{container_name}", conf.data_dir); // can't select fields in the format!() {} thing, have to do this
     let log_dir: &Path = Path::new(log_path).parent().unwrap();
     create_dir_all(log_dir).unwrap();
 
+    let job_logger = Arc::new(Mutex::new(
+        logging::JobLogger::new(log_path.clone()).unwrap(),
+    ));
+
+
     // write the script
     let script_path = &format!("{}/tmp/{container_name}.sh", conf.data_dir); // can't select fields in the format!() {} thing, have to do this
-                                                                             // create dir for the script
-    let script_dir: &Path = Path::new(script_path).parent().unwrap();
+    let script_dir: &Path = Path::new(script_path).parent().unwrap(); // create dir for the script
     create_dir_all(script_dir).unwrap();
-    write(
-        script_path,
-        job.commands
-            //.iter()
-            //.map(|item| {
-            //    // TODO: FIGURE OUT HOW TO HANDLE IT ESCAPING IT OR WHATEVER AAAAAAAAAAAAA
-            //    // update: i have no idea what i was talking about previously
-            //})
-            //.collect::<Vec<String>>()
-            .join("\n"),
-    )
-    .unwrap();
+    write(script_path, job.commands.join("\n")).unwrap();
 
     // set permissions - *unix specific*
     let mut perms = File::open(script_path)
@@ -139,19 +134,26 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
         &job.shell
     ));
     cmd_args.push(job.clone().image);
-    // TODO: TEMPORARY - update to actually write it in the future
-    let cmd_output = better_commands::run_funcs(Command::new("podman").args(cmd_args),  {
-        |stdout_lines|
-        for line in stdout_lines {
-            println!("[stdout] {}", line.unwrap());
-        }
-    },
-{
-    |stderr_lines|
-    for line in stderr_lines {
-        println!("[stderr] {}", line.unwrap());
-    }
-});
+
+    let cmd_output = better_commands::run_funcs(
+        Command::new("podman").args(cmd_args),
+        {
+            let logger_clone = Arc::clone(&job_logger);
+            move |stdout_lines| {
+                for line in stdout_lines {
+                    let _ = logger_clone.lock().unwrap().stdout(line.unwrap());
+                }
+            }
+        },
+        {
+            let logger_clone = Arc::clone(&job_logger);
+            move |stderr_lines| {
+                for line in stderr_lines {
+                    let _ = logger_clone.lock().unwrap().stderr(line.unwrap());
+                }
+            }
+        },
+    );
     // remove tmp dir
     remove_dir_all(script_dir).unwrap();
 
