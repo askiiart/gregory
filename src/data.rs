@@ -77,11 +77,17 @@ pub(crate) struct Package {
 /// The exit status and stuff for a [`Job`]
 #[derive(Debug, Clone)]
 pub(crate) struct JobExitStatus {
-    pub(crate) job: Job,
     /// The [`Job`] this status is from
-    ///
+    pub(crate) job: Job,
+    /// The status code returned by the command - note that this can be None if the program exits due to a signal like SIGKILL.
+    /// 
     /// This is stored as a u16 rather than a u8 so that 65535 can be returned if there is no exit code rather than doing an Option or something, which I fear will probably come back to haunt me, but whatever
-    pub(crate) exit_code: u16,
+    /// Update: I knew it. Why did I do this. Anyways this is gonna be an Option<i32> like Command uses now
+    /// 
+    /// Hell this isn't even coming back to haunt me for any sane reason, it's because I went with the actually sensible decision of Option<i32> in better-commands, so if I want to use that then I'm stuck using this.
+    /// 
+    /// Anyways I'll stop rambling now.
+    pub(crate) exit_code: Option<i32>,
     /// Where the log is
     ///
     /// TEMPORARY

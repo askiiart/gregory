@@ -14,11 +14,12 @@ use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
 use uuid::Uuid;
+use better_commands;
 
 mod cli;
 mod data;
-mod tests;
 mod errors;
+mod tests;
 
 fn main() {
     let cli = Cli::parse();
@@ -50,8 +51,6 @@ fn main() {
 
 fn run(config_path: String) {
     let config = config_from_file(config_path).unwrap();
-
-    println!("{:#?}", config);
 
     let mut jobs: Vec<Job> = Vec::new();
 
@@ -102,6 +101,7 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
             //.iter()
             //.map(|item| {
             //    // TODO: FIGURE OUT HOW TO HANDLE IT ESCAPING IT OR WHATEVER AAAAAAAAAAAAA
+            //    // update: i have no idea what i was talking about previously
             //})
             //.collect::<Vec<String>>()
             .join("\n"),
@@ -116,36 +116,51 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
         .permissions();
     PermissionsExt::set_mode(&mut perms, 0o755);
 
-    let now = Instant::now();
-    let cmd_args: Vec<String> = vec![
+    let mut cmd_args: Vec<String> = vec![
         "run".to_string(),
         format!("--name={container_name}"),
         format!("--cpus={threads}"),
         format!("--privileged={}", job.privileged),
         format!("-v={script_path}:/gregory-entrypoint.sh"),
-        format!(
-            "--entrypoint=[\"{}\", \"/gregory-entrypoint.sh\"]",
-            &job.shell
-        ),
-        job.clone().image,
     ];
-    println!("{:?}", cmd_args);
-    let cmd_output = Command::new("podman").args(cmd_args).output().unwrap();
-    let elapsed = now.elapsed();
+    for vol in job.clone().volumes.unwrap_or(Vec::new()) {
+        match conf.volumes.get(&vol) {
+            Some(item) => {
+                cmd_args.push(format!("-v={}", item));
+            }
+            None => {
+                println!()
+            }
+        }
+    }
+    cmd_args.push(format!(
+        "--entrypoint=[\"{}\", \"/gregory-entrypoint.sh\"]",
+        &job.shell
+    ));
+    cmd_args.push(job.clone().image);
+    // TODO: TEMPORARY - update to actually write it in the future
+    let cmd_output = better_commands::run_funcs(Command::new("podman").args(cmd_args),  {
+        |stdout_lines|
+        for line in stdout_lines {
+            println!("[stdout] {}", line.unwrap());
+        }
+    },
+{
+    |stderr_lines|
+    for line in stderr_lines {
+        println!("[stderr] {}", line.unwrap());
+    }
+});
     // remove tmp dir
     remove_dir_all(script_dir).unwrap();
-
-    // write logs - TEMPORARY
-    write(log_path, &cmd_output.stdout).unwrap();
-    write(format!("{log_path}.err"), &cmd_output.stderr).unwrap();
 
     println!("{:?}", cmd_output);
 
     return JobExitStatus {
         container_name: container_name,
-        duration: elapsed,
+        duration: cmd_output.clone().duration(),
         job: job,
-        exit_code: cmd_output.status.code().ok_or_else(|| 65535).unwrap() as u16,
+        exit_code: cmd_output.status_code(),
         log_path: log_path.clone(),
     };
 }
