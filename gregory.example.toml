@@ -27,15 +27,15 @@ max-threads = 10
   [packages.some-librewolf-dependency]
 
     [packages.some-librewolf-dependency.compilation]
-    id = "1"
-    revision = "2"
+    id = "2"
+    revision = "4"
     threads = 2
     image = "docker.io/library/debian"
-    commands = ["echo hi", "echo helloooooooooo"]
+    commands = ["echo hi", "echo helloooooooooo >&2"]
     volumes = ["other-workspace"]
 
     [packages.some-librewolf-dependency.packaging.fedora]
-    id = "1"
+    id = "3"
     revision = "2"
     threads = 2
     image = "docker.io/library/fedora"

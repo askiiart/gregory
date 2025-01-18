@@ -20,6 +20,7 @@ mod cli;
 mod data;
 mod errors;
 mod tests;
+mod logging;
 
 fn main() {
     let cli = Cli::parse();
