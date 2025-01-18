@@ -1,10 +1,6 @@
 use crate::errors::Error;
+use std::fs::{File, OpenOptions};
 use std::io::Write;
-use std::sync::{Arc, Mutex};
-use std::{
-    fs::{File, OpenOptions},
-    os::unix::fs::FileExt,
-};
 
 /// The logger for gregory itself - NOT for jobs
 pub(crate) struct Logger {
@@ -80,5 +76,4 @@ impl JobLogger {
             }
         }
     }
-
 }

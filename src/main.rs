@@ -1,10 +1,8 @@
 use crate::cli::*;
 use crate::data::*;
-use alphanumeric_sort::sort_str_slice;
 use better_commands;
 use clap::{CommandFactory, Parser};
 use clap_complete::aot::{generate, Bash, Elvish, Fish, PowerShell, Zsh};
-use std::fs;
 use std::fs::create_dir_all;
 use std::fs::remove_dir_all;
 use std::fs::write;
@@ -15,7 +13,6 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Instant;
 use uuid::Uuid;
 
 mod cli;
@@ -96,7 +93,6 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
     let job_logger = Arc::new(Mutex::new(
         logging::JobLogger::new(log_path.clone()).unwrap(),
     ));
-
 
     // write the script
     let script_path = &format!("{}/tmp/{container_name}.sh", conf.data_dir); // can't select fields in the format!() {} thing, have to do this

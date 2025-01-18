@@ -5,7 +5,7 @@ max-threads = 10
 
   [packages.librewolf]
 
-    dependencies = ["some-librewolf-dependency"]
+  dependencies = ["some-librewolf-dependency"]
 
     [packages.librewolf.compilation]
     id = "1"

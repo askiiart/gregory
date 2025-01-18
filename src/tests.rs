@@ -1,4 +1,3 @@
-use crate::data;
 #[cfg(test)]
 use alphanumeric_sort::sort_str_slice;
 
