@@ -16,6 +16,7 @@ Go look at [`docs/`](/docs/)
   - Log stderr too
 - Add dependency system
   - Automatic detection with features (extensibility?) for each distro?
+- Add podman errors
 
 ## Other stuff
 
