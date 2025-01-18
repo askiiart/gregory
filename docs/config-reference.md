@@ -28,9 +28,6 @@ Note: This primarily uses LibreWolf and Fedora as examples of packages and distr
 
 ## Job config
 
-- `id` (string): An ID to identify the job, such as the compilation of a program **(highly recommended)**
-  - Default is `-1` for unassigned
-  - If you just want to run stuff, you don't need this, but it's *highly* recommended as it allows you to filter your logs.
 - `revision` (string): A revision id for the job, such as a version number for a compilation script
   - Default is `1`
 - `threads` (float): The maximum number of vCPUs/threads to dedicate to a job; this can be a fractional number
@@ -56,9 +53,9 @@ Example:
   [packages.librewolf]
 
     dependencies = ["some-librewolf-dependency"]
+    version_check = ["check-version --whenever-you-feel-like-it-please"]
 
     [packages.librewolf.compilation]
-    id = "1"
     revision = "2"
     threads = 8
     image = "docker.io/library/debian"
@@ -75,7 +72,11 @@ Example:
     volumes = ["librewolf"]
 ```
 
-Aside from just the jobs, `packages` also contains the `dependencies` field, which lists dependencies for this package which gregory manages - don't list external dependencies in that field.
+`packages` contains the following fields:
+
+- `dependencies` (array): Lists dependencies for this package which gregory manages - don't list external dependencies in that field. This isn't required, but will ensure that gregory doesn't have to be run multiple times to get a package up-to-date.
+  - Note that the repo will be updated (`[update-repo]`) after any dependency it updated
+- `version-check` (array): Commands to be run to check the version of the package; what's printed to `stdout` will be counted as the version, and if anything is printed to `stderr`, the package will be ignored and an error will be logged. Additionally, if the package version seems to have decreased, then a warning will be logged.
 
 ### Compilation (optional)
 
@@ -89,7 +90,6 @@ It's defined in this format:
   [packages.librewolf]
 
     [packages.librewolf.compilation]
-    id = "1"
     revision = "2"
     threads = 8
     image = "docker.io/library/debian"

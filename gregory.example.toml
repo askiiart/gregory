@@ -6,9 +6,9 @@ max-threads = 10
   [packages.librewolf]
 
   dependencies = ["some-librewolf-dependency"]
+  version_check = ["check-version --whenever-you-feel-like-it-please"]
 
     [packages.librewolf.compilation]
-    id = "1"
     revision = "2"
     threads = 6
     image = "docker.io/library/debian"
@@ -27,7 +27,6 @@ max-threads = 10
   [packages.some-librewolf-dependency]
 
     [packages.some-librewolf-dependency.compilation]
-    id = "2"
     revision = "4"
     threads = 2
     image = "docker.io/library/debian"
@@ -35,7 +34,6 @@ max-threads = 10
     volumes = ["other-workspace"]
 
     [packages.some-librewolf-dependency.packaging.fedora]
-    id = "3"
     revision = "2"
     threads = 2
     image = "docker.io/library/fedora"

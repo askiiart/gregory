@@ -35,9 +35,7 @@ pub(crate) struct Config {
 /// Holds the data for a job
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Job {
-    /// An ID to identify the job, such as the compilation of a program
-    #[serde(default = "id")]
-    pub(crate) id: String,
+    /// What revision of the job config, temporary until better revision tracking is added
     #[serde(default = "revision")]
     pub(crate) revision: String,
     /// How many threads to limit this job to; recommended to set it to the max threads the job will use

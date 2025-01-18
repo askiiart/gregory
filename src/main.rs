@@ -3,6 +3,7 @@ use crate::data::*;
 use better_commands;
 use clap::{CommandFactory, Parser};
 use clap_complete::aot::{generate, Bash, Elvish, Fish, PowerShell, Zsh};
+use std::collections::HashMap;
 use std::fs::create_dir_all;
 use std::fs::remove_dir_all;
 use std::fs::write;
@@ -52,38 +53,40 @@ fn main() {
 fn run(config_path: String) {
     let config = config_from_file(config_path).unwrap();
 
-    let mut jobs: Vec<Job> = Vec::new();
+    let mut jobs: HashMap<String, Job> = HashMap::new();
 
-    for (_, package) in config.clone().packages {
+    for (package_name, package) in config.clone().packages {
+
         match package.compilation {
             Some(tmp) => {
-                jobs.push(tmp);
+                jobs.insert(format!("packages.{}.compilation", package_name), tmp);
             }
             None => {}
         }
 
-        for (_, job) in package.packaging {
-            jobs.push(job);
+        for (packaging_name, job) in package.packaging {
+            jobs.insert(format!("packages.{}.{}", package_name, packaging_name), job);
         }
     }
 
-    for (_, job) in config.clone().update_repo {
-        jobs.push(job);
+    for (repo, job) in config.clone().update_repo {
+        jobs.insert(format!("update-repo.{}", repo), job);
     }
 
-    for job in jobs {
-        println!("{:#?}", run_job(config.clone(), job));
+    for (job_name, job) in jobs {
+        println!("{:#?}", run_job(config.clone(), job_name, job));
     }
+
 }
 
-fn run_job(conf: Config, job: Job) -> JobExitStatus {
+fn run_job(conf: Config, job_name: String, job: Job) -> JobExitStatus {
     // limit threads to max_threads in the config
     let mut threads = job.threads;
     if job.threads > conf.max_threads {
         threads = conf.max_threads;
     }
 
-    let container_name: String = format!("gregory-{}-{}-{}", job.id, job.revision, Uuid::now_v7());
+    let container_name: String = format!("gregory-{}-{}-{}", job_name, job.revision, Uuid::now_v7());
 
     // do job log setup
     let log_path = &format!("{}/logs/{container_name}", conf.data_dir); // can't select fields in the format!() {} thing, have to do this
@@ -108,6 +111,7 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
         .permissions();
     PermissionsExt::set_mode(&mut perms, 0o755);
 
+    // run the job
     let mut cmd_args: Vec<String> = vec![
         "run".to_string(),
         format!("--name={container_name}"),
@@ -150,7 +154,8 @@ fn run_job(conf: Config, job: Job) -> JobExitStatus {
             }
         },
     );
-    // remove tmp dir
+    
+    // remove tmp dir/clean up
     remove_dir_all(script_dir).unwrap();
 
     println!("{:?}", cmd_output);
