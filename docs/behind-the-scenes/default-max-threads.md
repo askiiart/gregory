@@ -23,7 +23,7 @@ i.e. with `total_threads` as the number of threads the CPU(s) has:
 
 ---
 
-Alternative algorithms I tried:
+Alternative algorithm I tried:
 
 ```rs
 if total_threads >= 32 {
