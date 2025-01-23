@@ -220,25 +220,23 @@ fn order_jobs(jobs: HashMap<String, Job>, conf: Config) {
     */
 }
 
-/// Returns a hashmap mapping all job ids to what they depend on (recursively)
+/// Returns a hashmap mapping all job ids to what jobs depend on them (recursively)
 ///
 /// Example output using the example toml:
 ///
 /// ```json
 /// {
-///     "packages.some-librewolf-dependency.compilation": [
-///         "packages.some-librewolf-dependency.compilation",
-///     ],
-///     "packages.librewolf.fedora": [
-///         "some-librewolf-dependency",
+///     "packages.some-librewolf-dependency.packaging.fedora": [
 ///         "packages.librewolf.compilation",
+///         "packages.librewolf.packaging.fedora",
+///     ],
+///     "packages.some-librewolf-dependency.compilation": [
+///         "packages.librewolf.compilation",
+///         "packages.librewolf.packaging.fedora",
+///         "packages.some-librewolf-dependency.packaging.fedora",
 ///     ],
 ///     "packages.librewolf.compilation": [
-///         "some-librewolf-dependency",
-///         "packages.librewolf.compilation",
-///     ],
-///     "packages.some-librewolf-dependency.fedora": [
-///         "packages.some-librewolf-dependency.compilation",
+///         "packages.librewolf.packaging.fedora",
 ///     ],
 /// }
 /// ```
