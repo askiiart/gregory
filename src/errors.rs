@@ -8,6 +8,6 @@ pub enum Error {
     #[error("error while deserializing TOML: {0}")]
     DeserError(#[from] toml::de::Error),
 
-    #[error("Podman error: {0}")]
-    PodmanError(String),
+    #[error("Database error: {0}")]
+    DatabaseError(String),
 }
