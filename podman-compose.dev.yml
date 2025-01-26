@@ -11,6 +11,8 @@ services:
       POSTGRES_PASSWORD: 'pass'
     volumes:
       - './dev/gregory-pg:/var/lib/postgresql/data'
+    ports:
+      - '5432:5432'
 
   pgadmin4:
     image: docker.io/dpage/pgadmin4
