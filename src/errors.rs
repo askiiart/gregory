@@ -2,12 +2,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("io error: {0}")]
+    #[error("I/O error: {0}")]
     IOError(#[from] std::io::Error),
-
     #[error("error while deserializing TOML: {0}")]
     DeserError(#[from] toml::de::Error),
-
-    #[error("Database error: {0}")]
-    DatabaseError(String),
+    #[error("Error connecting to database: {0}")]
+    DbConnectionError(String),
 }
