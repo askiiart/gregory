@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -ex
+
 # set env vars for testing
 export GREGORY_DB_ADDRESS=postgres
 export GREGORY_DB_USER=gregory
