@@ -12,7 +12,7 @@ max-threads = 10
     revision = "2"
     threads = 6
     image = "docker.io/library/debian"
-    commands = ["echo hi", "echo helloooooooooo"]
+    commands = ["echo hi", "sleep 2.432", "echo helloooooooooo"]
     volumes = ["librewolf"]
 
     [packages.librewolf.packaging.fedora]

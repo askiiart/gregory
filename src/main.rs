@@ -3,6 +3,8 @@ use crate::data::*;
 use better_commands;
 use clap::{CommandFactory, Parser};
 use clap_complete::aot::{generate, Bash, Elvish, Fish, PowerShell, Zsh};
+use logging::sql;
+use sqlx::PgConnection;
 use std::collections::HashMap;
 use std::fs::create_dir_all;
 use std::fs::remove_dir_all;
@@ -14,6 +16,7 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Instant;
 use uuid::Uuid;
 
 mod cli;
@@ -22,7 +25,8 @@ mod errors;
 mod logging;
 mod tests;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
@@ -44,37 +48,18 @@ fn main() {
             }
         },
         Commands::Run { config } => {
-            run(config);
+            run(config).await;
         }
     }
 }
 
-fn run(config_path: String) {
-    let config = config_from_file(config_path).unwrap(); // this reads the file to a [`Config`] thing
-
-    let mut jobs: HashMap<String, Job> = HashMap::new();
-
-    // arranges all the jobs by their job id (e.g. `packages.librewolf.compilation`)
-    for (package_name, package) in config.clone().packages {
-        match package.compilation {
-            Some(tmp) => {
-                jobs.insert(format!("packages.{}.compilation", package_name), tmp);
-            }
-            None => {}
-        }
-
-        for (job_name, job) in package.packaging {
-            jobs.insert(
-                format!("packages.{}.packaging.{}", package_name, job_name),
-                job,
-            );
-        }
-    }
+async fn run(config_path: String) {
+    let config = Config::from_file(config_path).unwrap(); // this reads the file to a [`Config`] thing
+    let state = State::from_config(config.clone()).await;
 
     // TODO: improve efficiency of all this logic
     // TODO: Also clean it up and split it into different functions, especially the job sorter
     // TODO: figure all this out and stuff and update the comments above this - the dependency map is done though
-    let dep_map = dependency_map(jobs.clone(), config.clone());
 
     let mut ordered: Vec<String> = Vec::new(); // holds the job ids in order of how they should be run
 
@@ -88,38 +73,36 @@ fn run(config_path: String) {
     let failed_packages: Vec<String> = Vec::new();
 
     // runs the jobs (will need to be updated after sorting is added)
-    for (job_id, job) in jobs {
-        let job_exit_status = run_job(config.clone(), job_id, job);
+    for (job_id, job) in state.jobs {
+        let job_exit_status = run_job(&state.conf, job_id, job);
         println!("{:#?}", job_exit_status);
     }
 }
 
-fn run_job(conf: Config, job_id: String, job: Job) -> JobExitStatus {
+fn run_job(conf: &Config, job_id: String, job: Job) -> JobExitStatus {
     // limit threads to max_threads in the config
     let mut threads = job.threads;
     if job.threads > conf.max_threads {
         threads = conf.max_threads;
     }
 
-    let container_name: String = format!("gregory-{}-{}-{}", job_id, job.revision, Uuid::now_v7());
+    let run_id = Uuid::now_v7();
 
-    // do job log setup
-    let log_path = &format!("{}/logs/{container_name}", conf.data_dir); // can't select fields in the format!() {} thing, have to do this
-    let log_dir: &Path = Path::new(log_path).parent().unwrap();
-    create_dir_all(log_dir).unwrap();
-
-    let job_logger = Arc::new(Mutex::new(
-        logging::JobLogger::new(log_path.clone()).unwrap(),
-    ));
+    let job_logger = Arc::new(Mutex::new(logging::JobLogger::new(
+        conf.data_dir.clone(),
+        job_id.clone(),
+        job.revision.clone(),
+        run_id,
+    )));
 
     // write the script
-    let script_path = &format!("{}/tmp/{container_name}.sh", conf.data_dir);
-    let script_dir: &Path = Path::new(script_path).parent().unwrap(); // create dir for the script
+    let script_path: String = format!("{}/tmp/{}.sh", conf.data_dir, run_id);
+    let script_dir = Path::new(&script_path).parent().unwrap(); // create dir for the script
     create_dir_all(script_dir).unwrap();
-    write(script_path, job.commands.join("\n")).unwrap();
+    write(&script_path, job.commands.join("\n")).unwrap();
 
     // set permissions - *unix specific*
-    let mut perms = File::open(script_path)
+    let mut perms = File::open(&script_path)
         .unwrap()
         .metadata()
         .unwrap()
@@ -129,7 +112,8 @@ fn run_job(conf: Config, job_id: String, job: Job) -> JobExitStatus {
     // run the job
     let mut cmd_args: Vec<String> = vec![
         "run".to_string(),
-        format!("--name={container_name}"),
+        "--rm".to_string(),
+        format!("--name={job_id}-{run_id}"),
         format!("--cpus={threads}"),
         format!("--privileged={}", job.privileged),
         format!("-v={script_path}:/gregory-entrypoint.sh"),
@@ -151,18 +135,26 @@ fn run_job(conf: Config, job_id: String, job: Job) -> JobExitStatus {
     let cmd_output = better_commands::run_funcs(
         Command::new("podman").args(cmd_args),
         {
+            let start_time = Instant::now();
             let logger_clone = Arc::clone(&job_logger);
             move |stdout_lines| {
                 for line in stdout_lines {
-                    let _ = logger_clone.lock().unwrap().stdout(line.unwrap());
+                    let _ = logger_clone
+                        .lock()
+                        .unwrap()
+                        .stdout(line.unwrap(), start_time);
                 }
             }
         },
         {
+            let start_time = Instant::now();
             let logger_clone = Arc::clone(&job_logger);
             move |stderr_lines| {
                 for line in stderr_lines {
-                    let _ = logger_clone.lock().unwrap().stderr(line.unwrap());
+                    let _ = logger_clone
+                        .lock()
+                        .unwrap()
+                        .stderr(line.unwrap(), start_time);
                 }
             }
         },
@@ -171,12 +163,16 @@ fn run_job(conf: Config, job_id: String, job: Job) -> JobExitStatus {
     // remove tmp dir/clean up
     remove_dir_all(script_dir).unwrap();
 
+    let log_path = job_logger.lock().unwrap().path();
+
+    // TODO: PUSH IT TO THE DB HERE
+
     return JobExitStatus {
-        container_name: container_name,
+        container_name: script_path,
         duration: cmd_output.clone().duration(),
-        job: job,
+        job,
         exit_code: cmd_output.status_code(),
-        log_path: log_path.clone(),
+        log_path,
     };
 }
 
@@ -220,73 +216,6 @@ fn order_jobs(jobs: HashMap<String, Job>, conf: Config) {
     */
 }
 
-/// Returns a hashmap mapping all job ids to what jobs depend on them (recursively)
-///
-/// Example output using the example toml:
-///
-/// ```json
-/// {
-///     "packages.some-librewolf-dependency.packaging.fedora": [
-///         "packages.librewolf.compilation",
-///         "packages.librewolf.packaging.fedora",
-///     ],
-///     "packages.some-librewolf-dependency.compilation": [
-///         "packages.librewolf.compilation",
-///         "packages.librewolf.packaging.fedora",
-///         "packages.some-librewolf-dependency.packaging.fedora",
-///     ],
-///     "packages.librewolf.compilation": [
-///         "packages.librewolf.packaging.fedora",
-///     ],
-/// }
-/// ```
-fn dependency_map(jobs: HashMap<String, Job>, conf: Config) -> HashMap<String, Vec<String>> {
-    let mut dep_map: HashMap<String, Vec<String>> = HashMap::new(); // holds job ids and every job they depend on (recursively) - not just specified dependencies, also packaging depending on compilation
-
-    for (job_id, _) in jobs.clone() {
-        let (_, package_name, _) = jod_id_to_metadata(job_id.clone());
-
-        for dep_name in conf
-            .packages
-            .get(&package_name)
-            .unwrap()
-            .dependencies
-            .clone()
-        {
-            let all_deps = recursive_deps_for_package(dep_name.clone(), conf.clone());
-            for dep in all_deps {
-                if !dep_map.contains_key(&dep) {
-                    dep_map.insert(dep.clone(), Vec::new());
-                }
-                dep_map.get_mut(&dep).unwrap().push(job_id.clone());
-            }
-        }
-    }
-
-    // add compilation jobs when relevant
-    for (package_name, package) in conf.packages {
-        if package.compilation.is_some() {
-            if !dep_map.contains_key(&format!("packages.{package_name}.compilation")) {
-                dep_map.insert(format!("packages.{package_name}.compilation"), Vec::new());
-            }
-
-            for (job_name, _) in package.packaging {
-                dep_map
-                    .get_mut(&format!("packages.{package_name}.compilation"))
-                    .unwrap()
-                    .push(format!("packages.{package_name}.packaging.{job_name}"));
-            }
-        }
-    }
-
-    // deduplicate dependencies
-    for (_, deps) in dep_map.iter_mut() {
-        deps.dedup();
-    }
-
-    return dep_map;
-}
-
 /// Returns all the dependencies for a package recursively, *not* including the package's own jobs (e.g. compilation)
 fn recursive_deps_for_package(package_name: String, conf: Config) -> Vec<String> {
     let mut deps: Vec<String> = Vec::new();
@@ -326,4 +255,140 @@ fn recursive_deps_for_package(package_name: String, conf: Config) -> Vec<String>
     }
 
     return deps;
+}
+
+struct State {
+    /// The entire config, from the config file.
+    conf: Config,
+    /// A hashmap mapping all job ids to what jobs depend on them (recursively)
+    ///
+    /// Using the example config (`gregory.example.toml`):
+    ///
+    /// ```json
+    /// {
+    ///     "packages.some-librewolf-dependency.packaging.fedora": [
+    ///         "packages.librewolf.compilation",
+    ///         "packages.librewolf.packaging.fedora",
+    ///     ],
+    ///     "packages.some-librewolf-dependency.compilation": [
+    ///         "packages.librewolf.compilation",
+    ///         "packages.librewolf.packaging.fedora",
+    ///         "packages.some-librewolf-dependency.packaging.fedora",
+    ///     ],
+    ///     "packages.librewolf.compilation": [
+    ///         "packages.librewolf.packaging.fedora",
+    ///     ],
+    /// }
+    /// ```
+    dependency_map: HashMap<String, Vec<String>>,
+    /// A hashmap mapping all job ids to their jobs
+    jobs: HashMap<String, Job>,
+    /// The connection to the database
+    ///
+    /// Example (from sqlx README, modified)
+    /// ```ignore
+    /// sqlx::query("DELETE FROM table").execute(&mut state.conn).await?;
+    /// ```
+    sql: Box<PgConnection>,
+}
+
+impl State {
+    pub(crate) async fn from_file(filename: String) -> State {
+        let conf = Config::from_file(filename).unwrap();
+        return State::from_config(conf).await;
+    }
+
+    pub(crate) async fn from_config(conf: Config) -> State {
+        let mut jobs = HashMap::new();
+
+        for (package_name, package) in conf.clone().packages {
+            match package.compilation {
+                Some(tmp) => {
+                    jobs.insert(format!("packages.{}.compilation", package_name), tmp);
+                }
+                None => {}
+            }
+
+            for (job_name, job) in package.packaging {
+                jobs.insert(
+                    format!("packages.{}.packaging.{}", package_name, job_name),
+                    job,
+                );
+            }
+        }
+
+        return State {
+            conf: conf.clone(),
+            jobs: jobs.clone(),
+            dependency_map: State::dependency_map(jobs, conf),
+            sql: logging::sql::start(5).await,
+        };
+    }
+
+    /// Returns a hashmap mapping all job ids to what jobs depend on them (recursively)
+    ///
+    /// Example output using the example toml:
+    ///
+    /// ```json
+    /// {
+    ///     "packages.some-librewolf-dependency.packaging.fedora": [
+    ///         "packages.librewolf.compilation",
+    ///         "packages.librewolf.packaging.fedora",
+    ///     ],
+    ///     "packages.some-librewolf-dependency.compilation": [
+    ///         "packages.librewolf.compilation",
+    ///         "packages.librewolf.packaging.fedora",
+    ///         "packages.some-librewolf-dependency.packaging.fedora",
+    ///     ],
+    ///     "packages.librewolf.compilation": [
+    ///         "packages.librewolf.packaging.fedora",
+    ///     ],
+    /// }
+    /// ```
+    fn dependency_map(jobs: HashMap<String, Job>, conf: Config) -> HashMap<String, Vec<String>> {
+        let mut dep_map: HashMap<String, Vec<String>> = HashMap::new(); // holds job ids and every job they depend on (recursively) - not just specified dependencies, also packaging depending on compilation
+
+        for (job_id, _) in jobs.clone() {
+            let (_, package_name, _) = jod_id_to_metadata(job_id.clone());
+
+            for dep_name in conf
+                .packages
+                .get(&package_name)
+                .unwrap()
+                .dependencies
+                .clone()
+            {
+                let all_deps = recursive_deps_for_package(dep_name.clone(), conf.clone());
+                for dep in all_deps {
+                    if !dep_map.contains_key(&dep) {
+                        dep_map.insert(dep.clone(), Vec::new());
+                    }
+                    dep_map.get_mut(&dep).unwrap().push(job_id.clone());
+                }
+            }
+        }
+
+        // add compilation jobs when relevant
+        for (package_name, package) in conf.packages {
+            if package.compilation.is_some() {
+                if !dep_map.contains_key(&format!("packages.{package_name}.compilation")) {
+                    dep_map.insert(format!("packages.{package_name}.compilation"), Vec::new());
+                }
+
+                for (job_name, _) in package.packaging {
+                    dep_map
+                        .get_mut(&format!("packages.{package_name}.compilation"))
+                        .unwrap()
+                        .push(format!("packages.{package_name}.packaging.{job_name}"));
+                }
+            }
+        }
+
+        // deduplicate dependencies
+        for (_, deps) in dep_map.iter_mut() {
+            deps.dedup();
+        }
+
+        return dep_map;
+    }
 }

@@ -6,6 +6,4 @@ pub enum Error {
     IOError(#[from] std::io::Error),
     #[error("error while deserializing TOML: {0}")]
     DeserError(#[from] toml::de::Error),
-    #[error("Error connecting to database: {0}")]
-    DbConnectionError(String),
 }

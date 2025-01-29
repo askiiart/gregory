@@ -9,6 +9,7 @@ readme = "README.md"
 [dependencies]
 alphanumeric-sort = "1.5.3"
 better-commands = "1.0.2"
+chrono = "0.4.39"
 clap = { version = "4.5.23", features = ["derive"] }
 clap_complete = "4.5.40"
 serde = { version = "1.0.216", features = ["derive"] }

@@ -32,6 +32,22 @@ pub(crate) struct Config {
     pub(crate) volumes: HashMap<String, String>,
 }
 
+impl Config {
+    pub(crate) fn from_file(filename: String) -> Result<Config, Error> {
+        match fs::read_to_string(filename) {
+            Ok(raw_data) => match toml::from_str(raw_data.as_str()) {
+                Ok(conf) => return Ok(conf),
+                Err(e) => {
+                    return Err(Error::DeserError(e));
+                }
+            },
+            Err(e) => {
+                return Err(Error::IOError(e));
+            }
+        }
+    }
+}
+
 /// Holds the data for a job
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Job {
@@ -89,26 +105,11 @@ pub(crate) struct JobExitStatus {
     /// Where the log is
     ///
     /// TEMPORARY
-    /// TODO: Have main() handle logs and writing them to the database, not doing it in run_job()
     pub(crate) log_path: String,
     /// How long it took to run the job
     pub(crate) duration: time::Duration,
     /// The name of the container this job ran in
     pub(crate) container_name: String,
-}
-
-pub(crate) fn config_from_file(filename: String) -> Result<Config, Error> {
-    match fs::read_to_string(filename) {
-        Ok(raw_data) => match toml::from_str(raw_data.as_str()) {
-            Ok(conf) => return Ok(conf),
-            Err(e) => {
-                return Err(Error::DeserError(e));
-            }
-        },
-        Err(e) => {
-            return Err(Error::IOError(e));
-        }
-    }
 }
 
 // ==========================
