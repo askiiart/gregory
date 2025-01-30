@@ -17,6 +17,7 @@ use std::process::Command;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Instant;
+use std::time::SystemTime;
 use uuid::Uuid;
 
 mod cli;
@@ -71,15 +72,34 @@ async fn run(config_path: String) {
     // TODO: Add logic to add repo update repos when relevant (see dependencies) here - or maybe do that logic earlier?
 
     let failed_packages: Vec<String> = Vec::new();
-
+    
+    
+    let mut pg_connection = sql::start(5).await;
+    
     // runs the jobs (will need to be updated after sorting is added)
     for (job_id, job) in state.jobs {
-        let job_exit_status = run_job(&state.conf, job_id, job);
-        println!("{:#?}", job_exit_status);
+        let start_time = SystemTime::now();
+        let job_exit_status = run_job(&state.conf, job_id.clone(), job.clone());
+
+        // TODO: PUSH IT TO THE DB HERE
+        sql::log_job(
+            pg_connection.as_mut(),
+            start_time,
+            start_time + job_exit_status.duration,
+            job_exit_status.exit_code,
+            job_id,
+            job.revision,
+            job_exit_status.job_uuid,
+            job_exit_status.log_path,
+        ).await;
     }
 }
 
-fn run_job(conf: &Config, job_id: String, job: Job) -> JobExitStatus {
+fn run_job(
+    conf: &Config,
+    job_id: String,
+    job: Job,
+) -> JobExitStatus {
     // limit threads to max_threads in the config
     let mut threads = job.threads;
     if job.threads > conf.max_threads {
@@ -165,14 +185,13 @@ fn run_job(conf: &Config, job_id: String, job: Job) -> JobExitStatus {
 
     let log_path = job_logger.lock().unwrap().path();
 
-    // TODO: PUSH IT TO THE DB HERE
-
     return JobExitStatus {
         container_name: script_path,
         duration: cmd_output.clone().duration(),
         job,
         exit_code: cmd_output.status_code(),
         log_path,
+        job_uuid: run_id.to_string(),
     };
 }
 
@@ -289,7 +308,7 @@ struct State {
     /// ```ignore
     /// sqlx::query("DELETE FROM table").execute(&mut state.conn).await?;
     /// ```
-    sql: Box<PgConnection>,
+    sql: PgConnection,
 }
 
 impl State {

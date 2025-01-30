@@ -5,7 +5,7 @@ use std::env;
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 /// Logging for a [`Job`]
 // TODO: log to postgres instead; maybe i already made a comment todo-ing this idk
@@ -75,14 +75,15 @@ impl JobLogger {
 }
 
 pub(crate) mod sql {
+    use chrono::{DateTime, Utc};
     use sqlx::{Connection, PgConnection};
-    use std::{env, time::Instant};
+    use std::{env, time::SystemTime};
 
     /// Returns a new connection to postgres
     ///
     /// *x*: How many times to retry the reconnect
-    pub(crate) async fn start(x: u16) -> Box<PgConnection> {
-        let mut conn = Box::new(db_connect_with_retries(x).await);
+    pub(crate) async fn start(x: u16) -> PgConnection {
+        let mut conn = db_connect_with_retries(x).await;
         create_tables(&mut conn).await;
         return conn;
     }
@@ -138,38 +139,34 @@ pub(crate) mod sql {
 
     // TODO: when adding logging to postgres directly, update this so it 1) adds the job at the start, 2) logs line-by-line, and 3) adds the end time and exit code at the end of the job
     pub(crate) async fn log_job(
-        mut conn: Box<PgConnection>,
-        start_time: Instant,
-        end_time: Instant,
+        conn: &mut PgConnection,
+        start_time: SystemTime,
+        end_time: SystemTime,
         exit_code: Option<i32>,
         job_id: String,
         revision: String,
         uuid: String,
         log_path: String,
     ) {
-        let start_time =
-            chrono::DateTime::from_timestamp_millis(start_time.elapsed().as_millis() as i64)
-                .unwrap()
-                .format("%+")
-                .to_string();
-        let end_time =
-            chrono::DateTime::from_timestamp_millis(end_time.elapsed().as_millis() as i64)
-                .unwrap()
-                .format("%+")
-                .to_string();
+        let start_time: DateTime<Utc> = start_time.into();
+        let start_time = start_time.format("%+").to_string();
+        let end_time: DateTime<Utc> = end_time.into();
+        let end_time = end_time.format("%+").to_string();
         let exit_code = match exit_code {
             Some(code) => code.to_string(),
             None => "NULL".to_string(),
         };
-        sqlx::query(format!("INSERT INTO job_logs (start_time, end_time, exit_code, job_id, revision, uuid, log_path)
-                VALUES ('{start_time}', '{end_time}', {exit_code}, '{job_id}', '{revision}', '{uuid}', '{log_path}'));            
-").as_str()).execute(conn.as_mut()).await.unwrap();
+        let query = format!("INSERT INTO job_logs (start_time, end_time, exit_code, job_id, revision, uuid, log_path) VALUES ('{start_time}', '{end_time}', {exit_code}, '{job_id}', '{revision}', '{uuid}', '{log_path}')");
+        sqlx::query(query.as_str())
+            .execute(conn.as_mut())
+            .await
+            .unwrap();
     }
 
     /// Tries to connect to the database *x* times, panics after reaching that limit
 
     /// Creates table(s) for gregory if they don't exist already
-    pub(crate) async fn create_tables(conn: &mut Box<PgConnection>) {
+    pub(crate) async fn create_tables(conn: &mut PgConnection) {
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS job_logs (
     start_time   timestamp,
@@ -184,7 +181,7 @@ pub(crate) mod sql {
 );
 ",
         )
-        .execute(conn.as_mut())
+        .execute(conn)
         .await
         .unwrap();
     }

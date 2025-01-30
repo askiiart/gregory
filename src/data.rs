@@ -110,6 +110,8 @@ pub(crate) struct JobExitStatus {
     pub(crate) duration: time::Duration,
     /// The name of the container this job ran in
     pub(crate) container_name: String,
+    /// Uuid
+    pub(crate) job_uuid: String
 }
 
 // ==========================
