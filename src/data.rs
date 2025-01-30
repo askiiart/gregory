@@ -159,11 +159,6 @@ pub(crate) fn shell() -> String {
     return "/bin/sh".to_string();
 }
 
-/// Default id (`-1`)
-pub(crate) fn id() -> String {
-    return "-1".to_string();
-}
-
 /// Default revision (`1`)
 pub(crate) fn revision() -> String {
     return "1".to_string();
