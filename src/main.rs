@@ -81,7 +81,7 @@ async fn run(config_path: String) {
         let job_exit_status = run_job(&state.conf, job_id.clone(), job.clone());
 
         sql::log_job(
-            pg_connection.as_mut(),
+            &mut pg_connection,
             start_time,
             start_time + job_exit_status.duration,
             job_exit_status.exit_code,
@@ -297,13 +297,6 @@ struct State {
     dependency_map: HashMap<String, Vec<String>>,
     /// A hashmap mapping all job ids to their jobs
     jobs: HashMap<String, Job>,
-    /// The connection to the database
-    ///
-    /// Example (from sqlx README, modified)
-    /// ```ignore
-    /// sqlx::query("DELETE FROM table").execute(&mut state.conn).await?;
-    /// ```
-    sql: PgConnection,
 }
 
 impl State {
@@ -335,7 +328,6 @@ impl State {
             conf: conf.clone(),
             jobs: jobs.clone(),
             dependency_map: State::dependency_map(jobs, conf),
-            sql: logging::sql::start(5).await,
         };
     }
 
