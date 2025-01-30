@@ -111,7 +111,7 @@ pub(crate) struct JobExitStatus {
     /// The name of the container this job ran in
     pub(crate) container_name: String,
     /// Uuid
-    pub(crate) job_uuid: String
+    pub(crate) job_uuid: String,
 }
 
 // ==========================

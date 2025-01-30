@@ -72,16 +72,14 @@ async fn run(config_path: String) {
     // TODO: Add logic to add repo update repos when relevant (see dependencies) here - or maybe do that logic earlier?
 
     let failed_packages: Vec<String> = Vec::new();
-    
-    
+
     let mut pg_connection = sql::start(5).await;
-    
+
     // runs the jobs (will need to be updated after sorting is added)
     for (job_id, job) in state.jobs {
         let start_time = SystemTime::now();
         let job_exit_status = run_job(&state.conf, job_id.clone(), job.clone());
 
-        // TODO: PUSH IT TO THE DB HERE
         sql::log_job(
             pg_connection.as_mut(),
             start_time,
@@ -91,15 +89,12 @@ async fn run(config_path: String) {
             job.revision,
             job_exit_status.job_uuid,
             job_exit_status.log_path,
-        ).await;
+        )
+        .await;
     }
 }
 
-fn run_job(
-    conf: &Config,
-    job_id: String,
-    job: Job,
-) -> JobExitStatus {
+fn run_job(conf: &Config, job_id: String, job: Job) -> JobExitStatus {
     // limit threads to max_threads in the config
     let mut threads = job.threads;
     if job.threads > conf.max_threads {
