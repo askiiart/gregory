@@ -199,37 +199,6 @@ fn jod_id_to_metadata(job_id: String) -> (String, String, String) {
     return (data[0].clone(), data[1].clone(), data[2].clone());
 }
 
-// TODO: update all this and stuff
-fn order_jobs(jobs: HashMap<String, Job>, conf: Config) {
-    // i feel like this stuff would be good as a recursive function
-    /*
-    for (job_name, job) in jobs.clone() {
-        ordered.push(job_name.clone());
-
-
-        for i in 0..(ordered.len() - 1) {
-            for item in dependency_map.get(&ordered[i]).unwrap() {
-                if dependency_map.get(&ordered[i]).unwrap().contains(&job_name) {
-                    // move job_name to the start
-                    let mut new_ordered = vec![ordered.pop().unwrap()];
-                    new_ordered.append(&mut ordered);
-                    ordered = new_ordered;
-                }
-                // handle it as a specific job that depends on it, or as a package as a whole
-                // TODO: add support for only specific jobs in a package depending on another package? should be easy
-                if item.contains('.') {
-
-                }
-                else {
-
-                }
-            }
-        }
-
-    }
-    */
-}
-
 /// Returns all the dependencies for a package recursively, *not* including the package's own jobs (e.g. compilation)
 fn recursive_deps_for_package(package_name: String, conf: Config) -> Vec<String> {
     let mut deps: Vec<String> = Vec::new();
