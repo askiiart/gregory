@@ -306,16 +306,17 @@ impl State {
     ///
     /// ```json
     /// {
-    ///     "packages.some-librewolf-dependency.packaging.fedora": [
-    ///         "packages.librewolf.compilation",
-    ///         "packages.librewolf.packaging.fedora",
-    ///     ],
     ///     "packages.some-librewolf-dependency.compilation": [
     ///         "packages.librewolf.compilation",
     ///         "packages.librewolf.packaging.fedora",
     ///         "packages.some-librewolf-dependency.packaging.fedora",
     ///     ],
+    ///     "packages.librewolf.packaging.fedora": [],
     ///     "packages.librewolf.compilation": [
+    ///         "packages.librewolf.packaging.fedora",
+    ///     ],
+    ///     "packages.some-librewolf-dependency.packaging.fedora": [
+    ///         "packages.librewolf.compilation",
     ///         "packages.librewolf.packaging.fedora",
     ///     ],
     /// }
@@ -324,7 +325,11 @@ impl State {
         let mut dep_map: HashMap<String, Vec<String>> = HashMap::new(); // holds job ids and every job they depend on (recursively) - not just specified dependencies, also packaging depending on compilation
 
         for (job_id, _) in jobs.clone() {
-            let (_, package_name, _) = jod_id_to_metadata(job_id.clone());
+            dep_map.insert(job_id, Vec::new());
+        }
+
+        for (job_id, _) in jobs.clone() {
+            let (_, package_name, _) = job_id_to_metadata(job_id.clone());
 
             for dep_name in conf
                 .packages
@@ -335,9 +340,6 @@ impl State {
             {
                 let all_deps = recursive_deps_for_package(dep_name.clone(), conf.clone());
                 for dep in all_deps {
-                    if !dep_map.contains_key(&dep) {
-                        dep_map.insert(dep.clone(), Vec::new());
-                    }
                     dep_map.get_mut(&dep).unwrap().push(job_id.clone());
                 }
             }
