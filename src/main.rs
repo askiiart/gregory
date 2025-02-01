@@ -92,6 +92,24 @@ async fn run(config_path: String) {
         )
         .await;
     }
+
+    // run repo updates
+    for (job_id, job) in update_repo_jobs {
+        let start_time = SystemTime::now();
+        let job_exit_status = run_job(&state.conf, job_id.clone(), job.clone());
+
+        sql::log_job(
+            &mut pg_connection,
+            start_time,
+            start_time + job_exit_status.duration,
+            job_exit_status.exit_code,
+            job_id,
+            job.revision,
+            job_exit_status.job_uuid,
+            job_exit_status.log_path,
+        )
+        .await;
+    }
 }
 
 fn run_job(conf: &Config, job_id: String, job: Job) -> JobExitStatus {
