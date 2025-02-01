@@ -77,8 +77,18 @@ async fn run(config_path: String) {
 
     // runs the jobs (will need to be updated after sorting is added)
     for (job_id, job) in state.jobs {
+        println!("Running {job_id}");
         let start_time = SystemTime::now();
         let job_exit_status = run_job(&state.conf, job_id.clone(), job.clone());
+        match job_exit_status.exit_code.clone() {
+            Some(e) => {
+                println!(" Job completed, exit code {e}");
+            }
+            None => {
+                println!(" Job completed, !!! no exit code !!!");
+                println!("  This means the process was terminated by a signal, like SIGKILL, which you should probably look into. See also: https://doc.rust-lang.org/std/process/struct.ExitStatus.html#method.code")
+            }
+        }
 
         sql::log_job(
             &mut pg_connection,
@@ -88,15 +98,32 @@ async fn run(config_path: String) {
             job_id,
             job.revision,
             job_exit_status.job_uuid,
-            job_exit_status.log_path,
+            job_exit_status.log_path.clone(),
         )
         .await;
+
+        println!(
+            " Logged metadata to postgres database; log file at {}",
+            job_exit_status.log_path
+        );
+
+        println!()
     }
 
     // run repo updates
     for (job_id, job) in update_repo_jobs {
+        println!("Running {job_id}");
         let start_time = SystemTime::now();
         let job_exit_status = run_job(&state.conf, job_id.clone(), job.clone());
+        match job_exit_status.exit_code.clone() {
+            Some(e) => {
+                println!(" Job completed, exit code {e}");
+            }
+            None => {
+                println!(" Job completed, !!! no exit code !!!");
+                println!("  This means the process was terminated by a signal, like SIGKILL, which you should probably look into. See also: https://doc.rust-lang.org/std/process/struct.ExitStatus.html#method.code")
+            }
+        }
 
         sql::log_job(
             &mut pg_connection,
@@ -106,9 +133,16 @@ async fn run(config_path: String) {
             job_id,
             job.revision,
             job_exit_status.job_uuid,
-            job_exit_status.log_path,
+            job_exit_status.log_path.clone(),
         )
         .await;
+
+        println!(
+            " Logged metadata to postgres database; log file at {}",
+            job_exit_status.log_path
+        );
+
+        println!()
     }
 }
 
