@@ -191,7 +191,7 @@ fn run_job(conf: &Config, job_id: String, job: Job) -> JobExitStatus {
 }
 
 /// Turns a job name into the relevant data - (category  (i.e. "packaging"), package name (i.e. "librewolf"), name (i.e. "compilation"))
-fn jod_id_to_metadata(job_id: String) -> (String, String, String) {
+fn job_id_to_metadata(job_id: String) -> (String, String, String) {
     let data = job_id
         .split(".")
         .map(|item| item.to_string())
